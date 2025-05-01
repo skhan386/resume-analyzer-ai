@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resume Analyzer + AI Tools</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2em;
+      margin: 0;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 1em;
+      text-align: center;
+    }
+
+    nav {
+      margin-bottom: 1em;
+      display: flex;
+      gap: 1em;
+    }
+
+    nav button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    nav button.active {
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    section {
+      display: none;
+      background: white;
+      padding: 2em;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 700px;
+      margin-top: 1em;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    textarea, input[type="file"], select {
+      width: 100%;
+      font-family: monospace;
+      padding: 1em;
+      margin-top: 0.5em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+
+    textarea {
+      min-height: 100px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #34495e;
+    }
+
+    button.submit {
+      margin-top: 1.5em;
+      padding: 12px 24px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .result-box {
+      white-space: pre-wrap;
+      margin-top: 1em;
+      padding: 1em;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .loading {
+      margin-top: 1em;
+      font-weight: bold;
+      color: #666;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>📄 Resume Analyzer + AI Tools</h1>
+
+  <nav>
+    <button class="tab active" data-tab="analyzer">Resume Analyzer</button>
+    <button class="tab" data-tab="matcher">Job Matcher</button>
+    <button class="tab" data-tab="rewriter">Bullet Rewriter</button>
+  </nav>
+
+  <!-- Resume Analyzer -->
+  <section id="analyzer" class="active">
+    <form id="analyzeForm" enctype="multipart/form-data">
+      <label for="resume">Paste Resume OR Upload (.txt or .pdf):</label>
+      <textarea name="resume" id="resume"></textarea>
+      <input type="file" name="resumeFile" accept=".txt,.pdf">
+
+      <label for="job">Paste Job Description:</label>
+      <textarea name="job" id="job" required></textarea>
+
+      <label for="language">Choose output language:</label>
+      <select name="language" id="language">
+        <option value="English" selected>English</option>
+        <option value="Spanish">Spanish</option>
+        <option value="Hindi">Hindi</option>
+        <option value="French">French</option>
+      </select>
+
+      <button type="submit" class="submit">Analyze</button>
+      <div id="loading" class="loading">⏳ Analyzing...</div>
+    </form>
+    <div id="analyzeResult" class="result-box" style="display:none;"></div>
+  </section>
+
+  <!-- Job Matcher -->
+  <section id="matcher">
+    <form id="matchForm" enctype="multipart/form-data">
+      <label for="matchResume">Upload Resume (.txt or .pdf):</label>
+      <input type="file" name="matchResume" id="matchResume" accept=".txt,.pdf">
+      <button type="submit" class="submit">Match Jobs</button>
+      <div id="matchLoading" class="loading">⏳ Matching jobs...</div>
+    </form>
+    <div id="matchResult" class="result-box" style="display:none;"></div>
+  </section>
+
+  <!-- Bullet Rewriter -->
+  <section id="rewriter">
+    <form id="rewriteForm">
+      <label for="bullet">Paste Resume Bullet Point:</label>
+      <textarea id="bullet" name="bullet" required></textarea>
+      <button type="submit" class="submit">Rewrite</button>
+      <div id="rewriteLoading" class="loading">⏳ Rewriting bullet...</div>
+    </form>
+    <div id="rewriteResult" class="result-box" style="display:none;"></div>
+  </section>
+
+  <script>
+    // Tab logic
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      };
+    });
+
+    // Resume Analyzer
+    document.getElementById('analyzeForm').onsubmit = async function (e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const loading = document.getElementById('loading');
+      const resultBox = document.getElementById('analyzeResult');
+      loading.style.display = 'block';
+      resultBox.style.display = 'none';
+
+      const res = await fetch('/analyze', { method: 'POST', body: formData });
+      const data = await res.json();
+      resultBox.textContent = data.result;
+      loading.style.display = 'none';
+      resultBox.style.display = 'block';
+    };
+
+    // Job Matcher
+    document.getElementById('matchForm').onsubmit = async function (e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const loading = document.getElementById('matchLoading');
+      const resultBox = document.getElementById('matchResult');
+      loading.style.display = 'block';
+      resultBox.style.display = 'none';
+
+      const res = await fetch('/match-jobs', { method: 'POST', body: formData });
+      const data = await res.json();
+      resultBox.textContent = data.result;
+      loading.style.display = 'none';
+      resultBox.style.display = 'block';
+    };
+
+    // Bullet Rewriter
+    document.getElementById('rewriteForm').onsubmit = async function (e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const loading = document.getElementById('rewriteLoading');
+      const resultBox = document.getElementById('rewriteResult');
+      loading.style.display = 'block';
+      resultBox.style.display = 'none';
+
+      const res = await fetch('/rewrite-bullet', { method: 'POST', body: formData });
+      const data = await res.json();
+      resultBox.textContent = data.result;
+      loading.style.display = 'none';
+      resultBox.style.display = 'block';
+    };
+  </script>
+</body>
+</html>
